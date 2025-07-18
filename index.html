@@ -178,7 +178,7 @@ function gerarTabela() {
 
     const chegada = new Date(proximaSaida.getTime() + tempoMs);
     const retorno = new Date(chegada.getTime() + tempoMs);
-    const proxima = new Date(retorno.getTime() + 5 * 60 * 1000); // adiciona 5 minutos
+    const proxima = new Date(retorno.getTime() + 5 * 60 * 1000); // 5 minutos depois do retorno
 
     const row = `
       <tr>
@@ -195,7 +195,19 @@ function gerarTabela() {
     tbody.insertAdjacentHTML('beforeend', row);
     proximaSaida = proxima;
   });
+
+  // ✅ Atualiza a lista de coordenadas ordenadas
+  renderListaOrdenada(resultados);
 }
+function renderListaOrdenada(lista) {
+  const ordenada = [...lista].sort((a, b) => a.distancia - b.distancia);
+  const coords = ordenada.map(d => d.destino).join(" ");
+  document.getElementById("listaOrdenada").innerHTML = `
+    <strong>Coordenadas ordenadas por distância:</strong><br>
+    <code>${coords}</code>
+  `;
+}
+
 
 function formatarHorario(data) {
   const dia = String(data.getDate()).padStart(2, '0');
@@ -216,6 +228,7 @@ function segundosParaTempo(segundos) {
 </script>
 
 <script>
+
 function ordenarPor(campo) {
   const tbody = document.querySelector('#tabela tbody');
   const linhas = Array.from(tbody.querySelectorAll('tr'));
