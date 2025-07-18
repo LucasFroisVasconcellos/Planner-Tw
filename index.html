@@ -2,11 +2,11 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Planejamento de Ataques - Tribal Wars</title>
+  <title>Planejador de Farm - Tribal Wars</title>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f4f4;
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
       padding: 20px;
     }
 
@@ -15,16 +15,57 @@
       color: #333;
     }
 
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    input, textarea {
+      padding: 8px;
+      box-sizing: border-box;
+    }
+
+    input[type="time"] {
+      width: 90px;
+    }
+
+    input[type="datetime-local"] {
+      width: 190px;
+    }
+
+    textarea {
+      width: 100%;
+      margin-top: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #0077cc;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #005fa3;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
-      background-color: #fff;
+      background: white;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
 
     th, td {
-      padding: 12px;
+      padding: 10px;
       text-align: center;
       border-bottom: 1px solid #ddd;
     }
@@ -32,50 +73,167 @@
     th {
       background-color: #0077cc;
       color: white;
+      cursor: pointer;
     }
 
     tr:hover {
       background-color: #f1f1f1;
     }
 
-    .null {
-      color: #999;
+    .coords-output {
+      margin-top: 20px;
+      background: #fff;
+      padding: 10px;
+      border-left: 4px solid #0077cc;
+      font-family: monospace;
+    }
+
+    small {
+      color: #666;
       font-style: italic;
     }
   </style>
 </head>
 <body>
 
-  <h1>Planejamento de Ataques - Tribal Wars</h1>
+<h1>Planejador de Farm - Tribal Wars</h1>
 
-  <table>
-    <thead>
+<div class="form-group">
+  <label for="tempoCampo">Tempo da unidade mais lenta por campo (minutos:segundos):<br>
+    <small>Ex: 09:20 (09 minutos e 20 segundos)</small>
+  </label>
+  <input type="time" id="tempoCampo" placeholder="00:09:20">
+</div>
+
+<div class="form-group">
+  <label for="saidaCompleta">
+    Horário do primeiro envio:<br>
+    <small>Ex: 17/07/2025 19:10:00</small>
+  </label>
+  <input type="datetime-local" id="saidaCompleta" step="1">
+</div>
+
+<div class="form-group">
+  <label for="origem">Coordenada da aldeia de origem:</label>
+  <input type="text" id="origem" placeholder="Ex: 495|485">
+</div>
+
+<div class="form-group">
+  <label for="destinos">Coordenadas de destino (separadas por espaço):</label>
+  <textarea id="destinos" rows="3" placeholder="Ex: 491|481 491|483 489|476 ..."></textarea>
+</div>
+
+<button onclick="gerarTabela()">Gerar Tabela</button>
+
+<table id="tabela">
+  <thead>
+    <tr>
+      <th onclick="ordenarPor('destino')">Destino ⬍</th>
+      <th onclick="ordenarPor('distancia')">Distância ⬍</th>
+      <th>Tempo até lá</th>
+      <th>Saída</th>
+      <th>Chegada</th>
+      <th>Retorno</th>
+      <th>Próxima saída</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<div class="coords-output" id="listaOrdenada">
+  <!-- Lista ordenada por distância será exibida aqui -->
+</div>
+
+<script>
+function gerarTabela() {
+  const tempoCampo = document.getElementById('tempoCampo').value;
+  const saidaCompleta = new Date(document.getElementById('saidaCompleta').value);
+  const origem = document.getElementById('origem').value.split('|').map(Number);
+  const destinos = document.getElementById('destinos').value.trim().split(/\s+/);
+
+  const [min, seg] = tempoCampo.split(':').map(Number);
+  const segundosPorCampo = min * 60 + seg;
+
+  const resultados = destinos.map(dest => {
+    const [x2, y2] = dest.split('|').map(Number);
+    const distancia = Math.sqrt(Math.pow(x2 - origem[0], 2) + Math.pow(y2 - origem[1], 2));
+    const tempoAteLa = distancia * segundosPorCampo;
+
+    return {
+      destino: dest,
+      distancia: distancia,
+      tempoSegundos: tempoAteLa
+    };
+  });
+
+  resultados.sort((a, b) => a.distancia - b.distancia);
+
+  const tbody = document.querySelector('#tabela tbody');
+  tbody.innerHTML = "";
+
+  let proximaSaida = new Date(saidaCompleta);
+
+  resultados.forEach((item, i) => {
+    const tempoMs = item.tempoSegundos * 1000;
+
+    const chegada = new Date(proximaSaida.getTime() + tempoMs);
+    const retorno = new Date(chegada.getTime() + tempoMs);
+    const proxima = new Date(retorno.getTime() + 5 * 60 * 1000); // adiciona 5 minutos
+
+    const row = `
       <tr>
-        <th>#</th>
-        <th>Destino</th>
-        <th>Distância</th>
-        <th>Tempo até lá</th>
-        <th>Saída</th>
-        <th>Chegada</th>
-        <th>Retorno</th>
-        <th>Próxima saída</th>
+        <td>${item.destino}</td>
+        <td>${item.distancia.toFixed(2)}</td>
+        <td>${segundosParaTempo(item.tempoSegundos)}</td>
+        <td>${formatarHorario(proximaSaida)}</td>
+        <td>${formatarHorario(chegada)}</td>
+        <td>${formatarHorario(retorno)}</td>
+        <td>${i === resultados.length - 1 ? '—' : formatarHorario(proxima)}</td>
       </tr>
-    </thead>
-    <tbody>
-      <tr><td>1</td><td>497|489</td><td>4.47</td><td>00:41:48</td><td>19:10:00</td><td>19:51:48</td><td>20:33:36</td><td>20:38:36</td></tr>
-      <tr><td>2</td><td>491|483</td><td>4.47</td><td>00:41:48</td><td>20:38:36</td><td>21:20:24</td><td>22:02:12</td><td>22:07:12</td></tr>
-      <tr><td>3</td><td>491|481</td><td>5.00</td><td>00:46:40</td><td>22:07:12</td><td>22:53:52</td><td>23:40:32</td><td>23:45:32</td></tr>
-      <tr><td>4</td><td>499|489</td><td>5.00</td><td>00:46:40</td><td>23:45:32</td><td>00:32:12</td><td>01:18:52</td><td>01:23:52</td></tr>
-      <tr><td>5</td><td>487|493</td><td>9.43</td><td>01:27:58</td><td>01:23:52</td><td>02:51:50</td><td>04:19:48</td><td>04:24:48</td></tr>
-      <tr><td>6</td><td>485|477</td><td>9.43</td><td>01:27:58</td><td>04:24:48</td><td>05:52:46</td><td>07:20:44</td><td>07:25:44</td></tr>
-      <tr><td>7</td><td>486|473</td><td>12.04</td><td>01:52:44</td><td>07:25:44</td><td>09:18:28</td><td>11:11:12</td><td>11:16:12</td></tr>
-      <tr><td>8</td><td>489|476</td><td>12.08</td><td>01:53:08</td><td>11:16:12</td><td>13:09:20</td><td>15:02:28</td><td>15:07:28</td></tr>
-      <tr><td>9</td><td>479|479</td><td>16.16</td><td>02:30:34</td><td>15:07:28</td><td>17:38:02</td><td>20:08:36</td><td>20:13:36</td></tr>
-      <tr><td>10</td><td>481|470</td><td>16.40</td><td>02:33:20</td><td>20:13:36</td><td>22:46:56</td><td>01:20:16</td><td>01:25:16</td></tr>
-      <tr><td>11</td><td>484|469</td><td>16.64</td><td>02:36:06</td><td>01:25:16</td><td>04:01:22</td><td>06:37:28</td><td>06:42:28</td></tr>
-      <tr><td>12</td><td>486|465</td><td>20.40</td><td>03:10:24</td><td>06:42:28</td><td>09:52:52</td><td>13:03:16</td><td class="null">—</td></tr>
-    </tbody>
-  </table>
+    `;
 
-</body>
-</html>
+    tbody.insertAdjacentHTML('beforeend', row);
+    proximaSaida = proxima;
+  });
+}
+
+function formatarHorario(data) {
+  const dia = String(data.getDate()).padStart(2, '0');
+  const mes = String(data.getMonth() + 1).padStart(2, '0');
+  const ano = data.getFullYear();
+  const h = String(data.getHours()).padStart(2, '0');
+  const m = String(data.getMinutes()).padStart(2, '0');
+  const s = String(data.getSeconds()).padStart(2, '0');
+  return `${dia}/${mes}/${ano} ${h}:${m}:${s}`;
+}
+
+function segundosParaTempo(segundos) {
+  const h = Math.floor(segundos / 3600);
+  const m = Math.floor((segundos % 3600) / 60);
+  const s = Math.floor(segundos % 60);
+  return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+}
+</script>
+
+<script>
+function ordenarPor(campo) {
+  const tbody = document.querySelector('#tabela tbody');
+  const linhas = Array.from(tbody.querySelectorAll('tr'));
+
+  const idx = {
+    'destino': 0,
+    'distancia': 1
+  }[campo];
+
+  const ordenado = linhas.sort((a, b) => {
+    const valA = a.children[idx].innerText;
+    const valB = b.children[idx].innerText;
+    return campo === 'distancia'
+      ? parseFloat(valA) - parseFloat(valB)
+      : valA.localeCompare(valB);
+  });
+
+  tbody.innerHTML = "";
+  ordenado.forEach(linha => tbody.appendChild(linha));
+}
+</script>
