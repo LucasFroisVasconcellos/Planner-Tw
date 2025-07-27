@@ -99,8 +99,8 @@
 <h1>Planejador de Farm - Tribal Wars</h1>
 
 <div class="tab">
-  <button class="tab-button active" onclick="openTab(event, 'Farm')">Planejador</button>
-  <button class="tab-button" onclick="openTab(event, 'OP')">OP</button>
+  <button class="tab-button active" data-tab="Farm">Planejador</button>
+  <button class="tab-button" data-tab="OP">OP</button>
 </div>
 
 <div id="Farm" class="tab-content" style="display: block;">
@@ -129,7 +129,7 @@
     <textarea id="destinos" rows="3" placeholder="Ex: 491|481 491|483 489|476 ..."></textarea>
   </div>
 
-  <button onclick="gerarTabela()">Gerar Tabela</button>
+  <button id="gerarTabelaBtn">Gerar Tabela</button>
 
   <table id="tabela">
     <thead>
@@ -171,7 +171,7 @@ player12 476|485 2"></textarea>
     <input type="text" id="opTempoUnidade" pattern="[0-5][0-9]:[0-5][0-9]" placeholder="09:20" required>
   </div>
 
-  <button onclick="distributeTargets()">Distribuir Alvos</button>
+  <button id="distributeTargetsBtn">Distribuir Alvos</button>
 
   <div id="opResult" class="coords-output">
     <!-- Resultados da distribuição de alvos serão exibidos aqui -->
