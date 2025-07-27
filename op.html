@@ -1,0 +1,24 @@
+  <h2>Planejador de Operações</h2>
+  <div class="form-group">
+    <label for="playerData">Dados dos jogadores:</label>
+    <small>Formato: Nome Coordenadas QtdAlvos (um por linha)</small>
+    <textarea id="playerData" rows="5" placeholder="Ex:
+player1 462|471 455|474 3
+player2 476|485 2"></textarea>
+  </div>
+
+  <div class="form-group">
+    <label for="enemyCoords">Coordenadas da tribo inimiga (separadas por espaço):</label>
+    <textarea id="enemyCoords" rows="5" placeholder="Ex: 563|526 563|524 563|522 ..."></textarea>
+  </div>
+
+  <div class="form-group">
+    <label for="opTempoUnidade">Tempo da unidade mais lenta por campo (minutos:segundos):</label>
+    <input type="text" id="opTempoUnidade" pattern="[0-5][0-9]:[0-5][0-9]" placeholder="09:20" required>
+  </div>
+
+  <button id="distributeTargetsBtn">Distribuir Alvos</button>
+
+  <div id="opResult" class="coords-output">
+    <!-- Resultados da distribuição de alvos serão exibidos aqui -->
+  </div>
